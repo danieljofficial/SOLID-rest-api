@@ -17,10 +17,12 @@ export class UserService implements IUserService {
     });
     return user;
   }
+
   async getAllUsers(): Promise<IUser[]> {
     const users = await this.prismaService.prisma.user.findMany();
     return users;
   }
+
   async getUserById(id: number): Promise<IUser | null> {
     const user = await this.prismaService.prisma.user.findFirst({
       where: { id: id },
@@ -31,10 +33,44 @@ export class UserService implements IUserService {
     }
     return user;
   }
-  updateUser(id: number, userData: Partial<IUser>): Promise<IUser | null> {
-    throw new Error("Method not implemented.");
+
+  async updateUser(
+    id: number,
+    userData: Partial<IUser>
+  ): Promise<IUser | null> {
+    const existingUser = await this.prismaService.prisma.user.findFirst({
+      where: { id: id },
+    });
+
+    if (!existingUser) {
+      throw new Error("Update failed: user does not exist.");
+    }
+
+    const updatedUser = await this.prismaService.prisma.user.update({
+      where: { id },
+      data: userData,
+    });
+
+    return updatedUser;
   }
-  deleteUser(id: number): Promise<boolean> {
-    throw new Error("Method not implemented.");
+
+  async deleteUser(id: number): Promise<boolean> {
+    const existingUser = await this.prismaService.prisma.user.findFirst({
+      where: { id: id },
+    });
+
+    if (!existingUser) {
+      throw new Error("Delete failed: user does not exist.");
+    }
+
+    const deletedUser = await this.prismaService.prisma.user.delete({
+      where: { id },
+    });
+
+    if (!deletedUser) {
+      return false;
+    }
+
+    return true;
   }
 }

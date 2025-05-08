@@ -21,8 +21,32 @@ export class UserController {
   }
   async getUserById(req: Request, res: Response) {
     try {
-      const user = await this.userService.getUserById(req.body.id);
+      const { id } = req.params;
+      const user = await this.userService.getUserById(parseInt(id));
       res.status(200).json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateUser(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const updatedUser = await this.userService.updateUser(
+        parseInt(id),
+        req.body
+      );
+      res.status(200).json(updatedUser);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async deleteUser(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const isDeleted = await this.userService.deleteUser(parseInt(id));
+      res.status(200).json({ success: isDeleted });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
