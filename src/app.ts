@@ -1,7 +1,8 @@
 import express from "express";
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
-import router from "./routes/userRoutes";
+import userRoutes from "./routes/userRoutes";
+import authRoutes from "./routes/authRoutes";
 
 // import prisma from "./prisma/prisma.service";
 
@@ -13,15 +14,8 @@ function createApp() {
     res.send("Hello from Express with TypeScript!");
   });
 
-  // const prisma = new PrismaClient();
-
-  // app.get("/users", async (req, res) => {
-  //   const users = await prisma.user.findMany();
-  //   const response = res.json(users);
-  //   // console.log(response);
-  // });
-
-  app.use("/users", router);
+  app.use("/users", userRoutes);
+  app.use("/auth", authRoutes);
 
   return app;
 }

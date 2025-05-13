@@ -4,14 +4,23 @@ import createApp from "../src/app";
 describe("User API", () => {
   let app = createApp();
 
-  it("should get a user by their id", async () => {
-    try {
-      const response = await request(app).get("/users/1");
-      expect(response.statusCode).toBe(200);
-      expect(typeof response.body.email).toBe("string");
-    } catch (error: any) {
-      console.log(error.message);
+  function generateEmail() {
+    const letters = "abcdefghijklmnop";
+    let result = "";
+    for (let i = 0; i < 5; i++) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
     }
+    return `${result}@example.com`;
+  }
+
+  it("should get a user by their id", async () => {
+    const email = generateEmail();
+    const { body } = await request(app)
+      .post("/users")
+      .send({ email: email, name: "newUser" });
+    const response = await request(app).get(`/users/${body.id}`);
+    expect(response.statusCode).toBe(200);
+    expect(typeof response.body.email).toBe("string");
   });
 
   it("should return an array of users", async () => {
@@ -25,15 +34,6 @@ describe("User API", () => {
   });
 
   it("should create a new user", async () => {
-    function generateEmail() {
-      const letters = "abcdefghijklmnop";
-      let result = "";
-      for (let i = 0; i < 5; i++) {
-        result += letters.charAt(Math.floor(Math.random() * letters.length));
-      }
-      return `${result}@example.com`;
-    }
-
     const email = generateEmail();
     const response = await request(app).post("/users").send({
       email: email,
@@ -54,8 +54,11 @@ describe("User API", () => {
   });
 
   it("should delete an existing user", async () => {
-    // Increment id by 1 before running
-    const response = await request(app).delete("/users/17");
+    const email = generateEmail();
+    const { body } = await request(app)
+      .post("/users")
+      .send({ email: email, name: "newUser" });
+    const response = await request(app).delete(`/users/${body.id}`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
