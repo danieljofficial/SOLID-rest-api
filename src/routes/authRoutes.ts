@@ -14,4 +14,5 @@ const authService = new AuthService(
 const userController = new AuthController(authService);
 
 authRoutes.post("/register", userController.register.bind(userController));
+authRoutes.post("/login", userController.login.bind(userController));
 export default authRoutes;

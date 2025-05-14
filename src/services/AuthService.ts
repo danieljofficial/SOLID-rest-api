@@ -55,11 +55,33 @@ export class AuthService implements IAuthService {
     return { user: newUser, token };
   }
 
-  login(
+  async login(
     email: string,
     password: string
   ): Promise<{ user: Omit<IAuthUser, "password">; token: string }> {
-    throw new Error("Method not implemented.");
+    const user = await this.prismaService.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+
+    if (!user.password) {
+      throw new Error("Invalid credentials");
+    }
+
+    const isValid = await this.comparePasswords(password, user.password);
+
+    if (!isValid) {
+      throw new Error("Invalid credentials");
+    }
+
+    const token = this.generateToken(user.id);
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword, token };
   }
   verifyToken(token: string): Promise<{ userId: number }> {
     throw new Error("Method not implemented.");
