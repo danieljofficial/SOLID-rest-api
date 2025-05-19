@@ -1,10 +1,11 @@
 import request from "supertest";
 import createApp from "../src/app";
+import "dotenv/config";
 
 describe("User API", () => {
   let app = createApp();
 
-  function generateEmail() {
+  function generateRandomEmail() {
     const letters = "abcdefghijklmnop";
     let result = "";
     for (let i = 0; i < 5; i++) {
@@ -14,13 +15,21 @@ describe("User API", () => {
   }
 
   it("should get a user by their id", async () => {
-    const email = generateEmail();
-    const { body } = await request(app)
-      .post("/users")
-      .send({ email: email, name: "newUser" });
-    const response = await request(app).get(`/users/${body.id}`);
-    expect(response.statusCode).toBe(200);
-    expect(typeof response.body.email).toBe("string");
+    const email = generateRandomEmail();
+    const testData = {
+      email: email,
+      name: "Test user",
+      password: process.env.PASSWORD,
+    };
+    const registrationResponse = await request(app)
+      .post("/auth/register")
+      .send(testData);
+    const userId = registrationResponse.body.user.id;
+    const getUserResponse = await request(app).get(`/users/${userId}`);
+    const { password: _, ...expectedResult } = testData;
+    expect(getUserResponse.statusCode).toBe(200);
+    expect(getUserResponse.body).toMatchObject(expectedResult);
+    await request(app).delete(`/users/${userId}`);
   });
 
   it("should return an array of users", async () => {
@@ -33,32 +42,38 @@ describe("User API", () => {
     });
   });
 
-  it("should create a new user", async () => {
-    const email = generateEmail();
-    const response = await request(app).post("/users").send({
-      email: email,
-      name: "Test User",
-    });
-
-    expect(response.statusCode).toBe(201);
-    expect(response.body.email).toEqual(email);
-  });
-
   it("should update an existing user", async () => {
-    const response = await request(app).patch("/users/6").send({
+    const email = generateRandomEmail();
+    const testData = {
+      email: email,
+      name: "Test user",
+      password: process.env.PASSWORD,
+    };
+    const registrationResponse = await request(app)
+      .post("/auth/register")
+      .send(testData);
+    const userId = registrationResponse.body.user.id;
+    const response = await request(app).patch(`/users/${userId}`).send({
       name: "updated name",
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.body.name).toEqual("updated name");
+    await request(app).delete(`/users/${userId}`);
   });
 
   it("should delete an existing user", async () => {
-    const email = generateEmail();
-    const { body } = await request(app)
-      .post("/users")
-      .send({ email: email, name: "newUser" });
-    const response = await request(app).delete(`/users/${body.id}`);
+    const email = generateRandomEmail();
+    const testData = {
+      email: email,
+      name: "Test user",
+      password: process.env.PASSWORD,
+    };
+    const registrationResponse = await request(app)
+      .post("/auth/register")
+      .send(testData);
+    const userId = registrationResponse.body.user.id;
+    const response = await request(app).delete(`/users/${userId}`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);

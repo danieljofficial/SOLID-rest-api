@@ -4,7 +4,7 @@ import "dotenv/config";
 
 describe("Authentication tests", () => {
   let app = createApp();
-  function generateEmail() {
+  function generateRandomEmail() {
     const letters = "abcdefghijklmnop";
     let result = "";
     for (let i = 0; i < 5; i++) {
@@ -14,7 +14,7 @@ describe("Authentication tests", () => {
   }
   it("Should authenticate and create a new user", async () => {
     const testData = {
-      email: generateEmail(),
+      email: generateRandomEmail(),
       name: "Test User",
       password: process.env.PASSWORD,
     };
@@ -39,8 +39,8 @@ describe("Authentication tests", () => {
 
   it("Should login an existing user", async () => {
     const { body } = await request(app).get("/users");
-    const email = body[10].email;
-    const expectedId = body[10].id;
+    const email = body[body.length - 1].email;
+    const expectedId = body[body.length - 1].id;
     const testData = {
       email,
       password: process.env.PASSWORD,
