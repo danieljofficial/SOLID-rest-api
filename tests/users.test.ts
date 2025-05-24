@@ -1,81 +1,133 @@
 import request from "supertest";
 import createApp from "../src/app";
 import "dotenv/config";
+import { v4 as uuidv4 } from "uuid";
 
 describe("User API", () => {
   let app = createApp();
+  let testUsers: Array<{ id: string; token: string }> = [];
 
-  function generateRandomEmail() {
-    const letters = "abcdefghijklmnop";
-    let result = "";
-    for (let i = 0; i < 5; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return `${result}@example.com`;
-  }
-
-  it("should get a user by their id", async () => {
-    const email = generateRandomEmail();
+  const generateRandomEmail = () => `${uuidv4()}@test.com`;
+  const registerTestUser = async () => {
     const testData = {
-      email: email,
+      email: generateRandomEmail(),
       name: "Test user",
       password: process.env.PASSWORD,
     };
+
     const registrationResponse = await request(app)
       .post("/auth/register")
       .send(testData);
-    const userId = registrationResponse.body.user.id;
-    const getUserResponse = await request(app).get(`/users/${userId}`);
-    const { password: _, ...expectedResult } = testData;
-    expect(getUserResponse.statusCode).toBe(200);
-    expect(getUserResponse.body).toMatchObject(expectedResult);
-    await request(app).delete(`/users/${userId}`);
+
+    testUsers.push({
+      id: registrationResponse.body.user.id,
+      token: registrationResponse.body.token,
+    });
+
+    return {
+      userId: registrationResponse.body.user.id,
+      token: registrationResponse.body.token,
+      testData,
+    };
+  };
+
+  const cleanUpTestUsers = async () => {
+    await Promise.all(
+      testUsers.map((user) => {
+        request(app)
+          .delete(`/users/${user.id}`)
+          .set("Authorization", `Bearer ${user.token}`)
+          .catch((e) => console.error("cleanup failed"));
+      })
+    );
+
+    testUsers = [];
+  };
+
+  afterEach(() => {
+    cleanUpTestUsers();
   });
 
-  it("should return an array of users", async () => {
-    const response = await request(app).get("/users");
-    expect(response.statusCode).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+  describe("GET /users/:id", () => {
+    it("Should get a user with proper authentication", async () => {
+      const { testData, token, userId } = await registerTestUser();
 
-    response.body.forEach((user: any) => {
-      expect(typeof user.email).toBe("string");
+      const response = await request(app)
+        .get(`/users/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toMatchObject({
+        email: testData.email,
+        name: testData.name,
+      });
+      expect(response.body.password).toBeUndefined();
+    });
+
+    it("Should return 401 for unauthorized requests", async () => {
+      const { userId } = await registerTestUser();
+
+      const response = await request(app).get(`/users/${userId}`);
+
+      expect(response.status).toBe(401);
     });
   });
 
-  it("should update an existing user", async () => {
-    const email = generateRandomEmail();
-    const testData = {
-      email: email,
-      name: "Test user",
-      password: process.env.PASSWORD,
-    };
-    const registrationResponse = await request(app)
-      .post("/auth/register")
-      .send(testData);
-    const userId = registrationResponse.body.user.id;
-    const response = await request(app).patch(`/users/${userId}`).send({
-      name: "updated name",
-    });
+  describe("GET /users", () => {
+    it("It should return an array ofusers with the expected structure", async () => {
+      const { token } = await registerTestUser();
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.name).toEqual("updated name");
-    await request(app).delete(`/users/${userId}`);
+      const response = await request(app)
+        .get("/users/")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+
+      const user = response.body[0];
+      expect(user).toHaveProperty("id");
+      expect(user).toHaveProperty("name");
+      expect(user).toHaveProperty("email");
+    });
   });
 
-  it("should delete an existing user", async () => {
-    const email = generateRandomEmail();
-    const testData = {
-      email: email,
-      name: "Test user",
-      password: process.env.PASSWORD,
-    };
-    const registrationResponse = await request(app)
-      .post("/auth/register")
-      .send(testData);
-    const userId = registrationResponse.body.user.id;
-    const response = await request(app).delete(`/users/${userId}`);
+  describe("PATCH /users/:id", () => {
+    it("should update user information", async () => {
+      const { userId, token } = await registerTestUser();
+      const updates = { name: "updated name" };
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.success).toBe(true);
+      const response = await request(app)
+        .patch(`/users/${userId}`)
+        .send(updates)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.name).toBe(updates.name);
+
+      const getResponse = await request(app)
+        .get(`/users/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(getResponse.body.name).toBe(updates.name);
+    });
+  });
+
+  describe("DELETE /users/:id", () => {
+    it("should successfully delete user", async () => {
+      const { userId, token } = await registerTestUser();
+
+      const response = await request(app)
+        .delete(`/users/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      const getResponse = await request(app)
+        .get(`/users/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(getResponse.status).toBe(500);
+    });
   });
 });

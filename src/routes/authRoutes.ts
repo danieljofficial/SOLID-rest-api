@@ -11,8 +11,9 @@ const authService = new AuthService(
   process.env.JWT_SECRET as string
 );
 
-const userController = new AuthController(authService);
+const authController = new AuthController(authService);
 
-authRoutes.post("/register", userController.register.bind(userController));
-authRoutes.post("/login", userController.login.bind(userController));
+authRoutes.post("/register", authController.register.bind(authController));
+authRoutes.post("/login", authController.login.bind(authController));
+authRoutes.post("/verify", authController.verify.bind(authController));
 export default authRoutes;

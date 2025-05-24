@@ -23,4 +23,17 @@ export class AuthController {
       res.status(401).json({ error: error.message });
     }
   }
+
+  async verify(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token) {
+        throw new Error("No token provided!");
+      }
+      const { userId } = await this.authService.verifyToken(token);
+      res.status(200).json({ userId });
+    } catch (error: any) {
+      res.status(401).json({ error: error.message });
+    }
+  }
 }
