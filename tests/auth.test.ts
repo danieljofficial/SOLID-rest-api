@@ -114,13 +114,13 @@ describe("Authentication tests", () => {
       expect(response.body).toHaveProperty("error");
     });
 
-    it("should reject login with non-existent email (404)", async () => {
+    it("should reject login with non-existent email", async () => {
       const response = await request(app).post("/auth/login").send({
         email: "nonexistent@test.com",
         password: "anypassword",
       });
 
-      // console.log(response)
+      console.log(response.body);
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
     });

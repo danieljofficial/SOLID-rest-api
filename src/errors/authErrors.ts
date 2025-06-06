@@ -6,7 +6,7 @@ export class InvalidCredentialsError extends Error {
 }
 
 export class UserNotFoundError extends Error {
-  constructor(message = "User not found!") {
+  constructor(message = "User not found!!") {
     super(message);
     this.name = "UserNotFoundError";
   }

@@ -1,6 +1,8 @@
 import { IUser } from "../interfaces/IUser";
 import { IUserService } from "../interfaces/IUserService";
 import { PrismaService } from "./prisma.service";
+import { PrismaClient } from "../generated/prisma/client";
+
 export class UserService implements IUserService {
   constructor(private prismaService: PrismaService) {}
   private stripPassword(user: {
@@ -13,23 +15,6 @@ export class UserService implements IUserService {
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
-  // async createUser(
-  //   userData: Omit<IUser, "id" | "createdAt">
-  // ): Promise<Omit<IUser, "password" >> {
-  //   const existingUser = await this.prismaService.prisma.user.findUnique({
-  //     where: { email: userData.email },
-  //   });
-
-  //   if (existingUser) {
-  //     throw new Error("User already exists!");
-  //   }
-
-  //   const user = await this.prismaService.prisma.user.create({
-  //     data: userData,
-  //   });
-  //   const result = this.stripPassword(user);
-  //   return result;
-  // }
 
   async getAllUsers(): Promise<IUser[]> {
     const users = await this.prismaService.prisma.user.findMany({
