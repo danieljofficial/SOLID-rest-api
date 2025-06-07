@@ -77,7 +77,7 @@ describe("Authentication tests", () => {
       const response = await request(app).post("/auth/register").send(testData);
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty("error");
+      expect(response.body.message).toBe("All Fields Required!");
     });
   });
 
@@ -111,7 +111,7 @@ describe("Authentication tests", () => {
       });
 
       expect(response.status).toBe(401);
-      expect(response.body).toHaveProperty("error");
+      expect(response.body.message).toBe("Invalid Password!");
     });
 
     it("should reject login with non-existent email", async () => {
@@ -120,9 +120,8 @@ describe("Authentication tests", () => {
         password: "anypassword",
       });
 
-      console.log(response.body);
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty("error");
+      expect(response.body.message).toBe("User Not Found!");
     });
   });
 
@@ -146,14 +145,14 @@ describe("Authentication tests", () => {
         .set("Authorization", "Bearer invalidtoken");
 
       expect(response.status).toBe(401);
-      expect(response.body).toHaveProperty("error");
+      expect(response.body.success).toBe(false);
     });
 
     it("should reject verification with missing token (401)", async () => {
       const response = await request(app).post("/auth/verify");
 
       expect(response.status).toBe(401);
-      expect(response.body).toHaveProperty("error");
+      expect(response.body.message).toBe("No token provided!");
     });
   });
 });

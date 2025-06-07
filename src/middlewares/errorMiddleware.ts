@@ -4,6 +4,9 @@ import {
   MissingPasswordError,
   UserNotFoundError,
 } from "../errors/authErrors";
+import "dotenv/config";
+import { AppError } from "../errors/genericErrors";
+import { TokenExpiredError } from "jsonwebtoken";
 
 export const errorHandler: ErrorRequestHandler = (
   err: Error,
@@ -11,19 +14,31 @@ export const errorHandler: ErrorRequestHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  if (err instanceof UserNotFoundError) {
-    res.status(404).json({ error: err.message });
-    return;
+  let statusCode = 500;
+  let message = "Internal server error";
+
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    message = err.message;
+  } else if (err instanceof TokenExpiredError) {
+    statusCode = 401;
+    message = "Token expired";
   }
 
-  if (
-    err instanceof InvalidCredentialsError ||
-    err instanceof MissingPasswordError
-  ) {
-    res.status(401).json({ error: err.message });
-    return;
+  const response = {
+    success: false,
+    message,
+  };
+
+  if (process.env.NODE_ENV === "development") {
+    console.error(`[${new Date().toISOString()}] Error:`, {
+      message: err.message,
+      stack: err.stack,
+      url: req.originalUrl,
+      method: req.method,
+      body: req.body,
+    });
   }
 
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error" });
+  res.status(statusCode).json(response);
 };

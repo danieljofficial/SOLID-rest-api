@@ -1,7 +1,9 @@
 import { IUser } from "../interfaces/IUser";
 import { IUserService } from "../interfaces/IUserService";
 import { PrismaService } from "./prisma.service";
-import { PrismaClient } from "../generated/prisma/client";
+import { Prisma, PrismaClient } from "../generated/prisma/client";
+import { NotFoundError } from "../errors/genericErrors";
+import { handlePrismaError } from "../errors/prismaErrors";
 
 export class UserService implements IUserService {
   constructor(private prismaService: PrismaService) {}
@@ -34,7 +36,7 @@ export class UserService implements IUserService {
     });
 
     if (!user) {
-      throw new Error("User does not exist");
+      throw new NotFoundError("User does not exist");
     }
 
     const userWithoutPassword = this.stripPassword(user);
@@ -45,21 +47,17 @@ export class UserService implements IUserService {
     id: number,
     userData: Partial<IUser>
   ): Promise<IUser | null> {
-    const existingUser = await this.prismaService.prisma.user.findFirst({
-      where: { id: id },
-    });
-
-    if (!existingUser) {
-      throw new Error("Update failed: user does not exist.");
+    try {
+      const updatedUser = await this.prismaService.prisma.user.update({
+        where: { id },
+        data: userData,
+      });
+      const userWithoutPassword = this.stripPassword(updatedUser);
+      return userWithoutPassword;
+    } catch (error) {
+      handlePrismaError(error);
+      return null;
     }
-
-    const updatedUser = await this.prismaService.prisma.user.update({
-      where: { id },
-      data: userData,
-    });
-
-    const userWithoutPassword = this.stripPassword(updatedUser);
-    return userWithoutPassword;
   }
 
   async deleteUser(id: number): Promise<boolean> {
@@ -68,7 +66,7 @@ export class UserService implements IUserService {
     });
 
     if (!existingUser) {
-      throw new Error("Delete failed: user does not exist.");
+      throw new NotFoundError("Delete failed: user does not exist.");
     }
 
     const deletedUser = await this.prismaService.prisma.user.delete({

@@ -4,10 +4,11 @@ import { PrismaService } from "./prisma.service";
 import * as jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import {
-  InvalidCredentialsError,
-  MissingPasswordError,
-  UserNotFoundError,
-} from "../errors/authErrors";
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/genericErrors";
 
 export class AuthService implements IAuthService {
   constructor(
@@ -34,7 +35,7 @@ export class AuthService implements IAuthService {
     password: string
   ): Promise<{ user: Omit<IAuthUser, "password">; token: string }> {
     if (!name || !email || !password) {
-      throw new Error("All fields are required");
+      throw new BadRequestError("All Fields Required!");
     }
 
     const existingUser = await this.prismaService.prisma.user.findFirst({
@@ -42,7 +43,7 @@ export class AuthService implements IAuthService {
     });
 
     if (existingUser) {
-      throw new Error("Email already esxists.");
+      throw new ConflictError("Email Already Exists!");
     }
 
     const hashedPassword = await this.hashPassword(password);
@@ -69,17 +70,17 @@ export class AuthService implements IAuthService {
     });
 
     if (!user) {
-      throw new UserNotFoundError();
+      throw new NotFoundError("User Not Found!");
     }
 
     if (!user.password) {
-      throw new MissingPasswordError();
+      throw new BadRequestError("Missing Password!");
     }
 
     const isValid = await this.comparePasswords(password, user.password);
 
     if (!isValid) {
-      throw new InvalidCredentialsError();
+      throw new UnauthorizedError("Invalid Password!");
     }
 
     const token = this.generateToken(user.id);
@@ -88,13 +89,14 @@ export class AuthService implements IAuthService {
 
     return { user: userWithoutPassword, token };
   }
+
   async verifyToken(token: string): Promise<{ userId: number }> {
     try {
       const decodedToken = jwt.verify(token, this.jwtSecret);
       const parsedToken = parseInt(decodedToken as string);
       return { userId: parsedToken };
     } catch (error) {
-      throw new Error(`Invalid token: ${error}`);
+      throw new UnauthorizedError(`Invalid Token: ${error}`);
     }
   }
 }

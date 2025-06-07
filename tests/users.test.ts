@@ -127,7 +127,7 @@ describe("User API", () => {
         .get(`/users/${userId}`)
         .set("Authorization", `Bearer ${token}`);
 
-      expect(getResponse.status).toBe(500);
+      expect(getResponse.status).toBe(404);
     });
   });
 });

@@ -1,39 +1,28 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
 import { AuthService } from "../services/AuthService";
+import { BadRequestError, UnauthorizedError } from "../errors/genericErrors";
 
 export class AuthController {
   constructor(private authService: AuthService) {}
   async register(req: Request, res: Response) {
-    try {
-      const { name, email, password } = req.body;
-      const newUser = await this.authService.register(name, email, password);
-      res.status(201).json(newUser);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+    const { name, email, password } = req.body;
+    const newUser = await this.authService.register(name, email, password);
+    res.status(201).json(newUser);
   }
 
   async login(req: Request, res: Response) {
-    // try {
     const { email, password } = req.body;
     const loggedInUser = await this.authService.login(email, password);
     res.status(200).json(loggedInUser);
-    // } catch (error: any) {
-    //   res.json({ error: error.message });
-    // }
   }
 
   async verify(req: Request, res: Response) {
-    try {
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
-        throw new Error("No token provided!");
-      }
-      const { userId } = await this.authService.verifyToken(token);
-      res.status(200).json({ userId });
-    } catch (error: any) {
-      res.status(401).json({ error: error.message });
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      throw new UnauthorizedError("No token provided!");
     }
+    const { userId } = await this.authService.verifyToken(token);
+    res.status(200).json({ userId });
   }
 }
