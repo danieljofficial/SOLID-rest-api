@@ -2,8 +2,10 @@ import { IProduct } from "./IProduct";
 
 export interface IProductService {
   createProduct(
-    productData: Omit<IProduct, "id" | "createdAt" | "updatedAt">
-  ): Promise<IProduct>;
+    name: string,
+    description: string,
+    price: number
+  ): Promise<IProduct | null>;
   getAllProducts(): Promise<IProduct[]>;
   getProductById(id: number): Promise<IProduct>;
   updateProduct(

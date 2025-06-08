@@ -10,7 +10,7 @@ describe("Product API", () => {
     price: 823,
   };
 
-  describe("GET /products", () => {
+  describe("POST /products", () => {
     it("Should create a new product", async () => {
       let response = await request(app).post("/products").send({
         name: "test product",

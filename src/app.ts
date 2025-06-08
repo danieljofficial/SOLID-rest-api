@@ -8,6 +8,7 @@ import { AuthService } from "./services/AuthService";
 import prismaService from "./services/prisma.service";
 import "dotenv/config";
 import { errorHandler } from "./middlewares/errorMiddleware";
+import productRoutes from "./routes/productRoutes";
 
 const authService = new AuthService(
   prismaService,
@@ -24,6 +25,7 @@ function createApp() {
 
   app.use("/users", authMiddleware.authenticate, userRoutes);
   app.use("/auth", authRoutes);
+  app.use("/products", productRoutes);
 
   app.use(errorHandler);
   return app;

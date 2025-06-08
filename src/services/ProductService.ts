@@ -1,3 +1,5 @@
+import { BadRequestError } from "../errors/genericErrors";
+import { handlePrismaError } from "../errors/prismaErrors";
 import { IProduct } from "../interfaces/product/IProduct";
 import { IProductService } from "../interfaces/product/IProductService";
 import prismaService, { PrismaService } from "./prisma.service";
@@ -5,13 +7,25 @@ import prismaService, { PrismaService } from "./prisma.service";
 export class ProductService implements IProductService {
   constructor(prismaService: PrismaService) {}
   async createProduct(
-    productData: Omit<IProduct, "id" | "createdAt" | "updatedAt">
-  ): Promise<IProduct> {
-    const newProduct = await prismaService.prisma.product.create({
-      data: productData,
-    });
-    return newProduct;
+    name: string,
+    description: string,
+    price: number
+  ): Promise<IProduct | null> {
+    if (!name || !description || !price) {
+      throw new BadRequestError("All Fields Required!");
+    }
+
+    try {
+      const newProduct = await prismaService.prisma.product.create({
+        data: { name, description, price },
+      });
+      return newProduct;
+    } catch (error) {
+      handlePrismaError(error);
+      return null;
+    }
   }
+
   getAllProducts(): Promise<IProduct[]> {
     throw new Error("Method not implemented.");
   }

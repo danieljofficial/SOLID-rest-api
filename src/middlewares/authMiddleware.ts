@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IAuthService } from "../interfaces/IAuthService";
+import { IAuthService } from "../interfaces/auth/IAuthService";
 
 export class AuthMiddleware {
   constructor(private authService: IAuthService) {}

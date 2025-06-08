@@ -1,5 +1,5 @@
-import { IAuthService } from "../interfaces/IAuthService";
-import { IAuthUser } from "../interfaces/IAuthUser";
+import { IAuthService } from "../interfaces/auth/IAuthService";
+import { IAuthUser } from "../interfaces/auth/IAuthUser";
 import { PrismaService } from "./prisma.service";
 import * as jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";

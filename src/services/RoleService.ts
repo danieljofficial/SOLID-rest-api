@@ -1,4 +1,5 @@
-import { IRoleService } from "../interfaces/IRoleService";
+import { NotFoundError } from "../errors/genericErrors";
+import { IRoleService } from "../interfaces/role/IRoleService";
 import { PrismaService } from "./prisma.service";
 
 export class RoleService implements IRoleService {
@@ -8,7 +9,7 @@ export class RoleService implements IRoleService {
       where: { name: roleName },
     });
     if (!role) {
-      throw new Error("Role not found");
+      throw new NotFoundError("Role not found");
     }
 
     const userRole = await this.prismaService.prisma.userRole.upsert({

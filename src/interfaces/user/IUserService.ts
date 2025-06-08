@@ -7,5 +7,5 @@ export interface IUserService {
   getAllUsers(): Promise<IUser[]>;
   getUserById(id: number): Promise<IUser | null>;
   updateUser(id: number, userData: Partial<IUser>): Promise<IUser | null>;
-  deleteUser(id: number): Promise<boolean>;
+  deleteUser(id: number): Promise<boolean | null>;
 }
