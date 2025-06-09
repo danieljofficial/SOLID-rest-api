@@ -7,10 +7,10 @@ export interface IProductService {
     price: number
   ): Promise<IProduct | null>;
   getAllProducts(): Promise<IProduct[]>;
-  getProductById(id: number): Promise<IProduct>;
+  getProductById(id: number): Promise<IProduct | null>;
   updateProduct(
     id: number,
     productData: Partial<IProduct>
-  ): Promise<Partial<IProduct>>;
-  deleteProduct(id: number): Promise<boolean>;
+  ): Promise<Partial<IProduct> | null>;
+  deleteProduct(id: number): Promise<boolean | null>;
 }

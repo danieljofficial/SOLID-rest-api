@@ -11,5 +11,20 @@ productRoutes.post(
   "/",
   productController.createProduct.bind(productController)
 );
-
+productRoutes.get(
+  "/",
+  productController.getAllProducts.bind(productController)
+);
+productRoutes.get(
+  "/:id",
+  productController.getProductById.bind(productController)
+);
+productRoutes.patch(
+  "/:id",
+  productController.updateProduct.bind(productController)
+);
+productRoutes.delete(
+  "/:id",
+  productController.deleteProduct.bind(productController)
+);
 export default productRoutes;

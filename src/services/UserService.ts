@@ -61,7 +61,7 @@ export class UserService implements IUserService {
 
   async deleteUser(id: number): Promise<boolean | null> {
     try {
-      const existingUser = await this.prismaService.prisma.user.delete({
+      await this.prismaService.prisma.user.delete({
         where: { id },
       });
       return true;

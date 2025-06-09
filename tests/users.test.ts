@@ -74,7 +74,7 @@ describe("User API", () => {
   });
 
   describe("GET /users", () => {
-    it("It should return an array ofusers with the expected structure", async () => {
+    it("It should return an array of users with the expected structure", async () => {
       const { token } = await registerTestUser();
 
       const response = await request(app)

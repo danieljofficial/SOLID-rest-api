@@ -1,11 +1,11 @@
-import { BadRequestError } from "../errors/genericErrors";
+import { BadRequestError, NotFoundError } from "../errors/genericErrors";
 import { handlePrismaError } from "../errors/prismaErrors";
 import { IProduct } from "../interfaces/product/IProduct";
 import { IProductService } from "../interfaces/product/IProductService";
-import prismaService, { PrismaService } from "./prisma.service";
+import { PrismaService } from "./prisma.service";
 
 export class ProductService implements IProductService {
-  constructor(prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
   async createProduct(
     name: string,
     description: string,
@@ -16,7 +16,7 @@ export class ProductService implements IProductService {
     }
 
     try {
-      const newProduct = await prismaService.prisma.product.create({
+      const newProduct = await this.prismaService.prisma.product.create({
         data: { name, description, price },
       });
       return newProduct;
@@ -26,19 +26,48 @@ export class ProductService implements IProductService {
     }
   }
 
-  getAllProducts(): Promise<IProduct[]> {
-    throw new Error("Method not implemented.");
+  async getAllProducts(): Promise<IProduct[]> {
+    let products = await this.prismaService.prisma.product.findMany();
+    return products;
   }
-  getProductById(id: number): Promise<IProduct> {
-    throw new Error("Method not implemented.");
+
+  async getProductById(id: number): Promise<IProduct> {
+    const product = await this.prismaService.prisma.product.findFirst({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundError("User does not exist");
+    }
+
+    return product;
   }
-  updateProduct(
+
+  async updateProduct(
     id: number,
     productData: Partial<IProduct>
-  ): Promise<Partial<IProduct>> {
-    throw new Error("Method not implemented.");
+  ): Promise<Partial<IProduct> | null> {
+    try {
+      const updatedProduct = await this.prismaService.prisma.product.update({
+        where: { id },
+        data: productData,
+      });
+      return updatedProduct;
+    } catch (error) {
+      handlePrismaError(error);
+      return null;
+    }
   }
-  deleteProduct(id: number): Promise<boolean> {
-    throw new Error("Method not implemented.");
+
+  async deleteProduct(id: number): Promise<boolean | null> {
+    try {
+      await this.prismaService.prisma.product.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      handlePrismaError(error);
+      return null;
+    }
   }
 }
