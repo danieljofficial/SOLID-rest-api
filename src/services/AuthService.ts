@@ -9,12 +9,14 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../errors/genericErrors";
+import { IRoleService } from "../interfaces/role/IRoleService";
 
 export class AuthService implements IAuthService {
   constructor(
     private prismaService: PrismaService,
     private jwtSecret: string,
-    private saltRounds: number = 10
+    private saltRounds: number = 10,
+    private roleService?: IRoleService
   ) {}
 
   private async hashPassword(password: string) {
@@ -55,6 +57,10 @@ export class AuthService implements IAuthService {
         password: hashedPassword,
       },
     });
+
+    if (this.roleService) {
+      await this.roleService.assignRoleToUser(result.id, "viewer");
+    }
 
     const token = this.generateToken(result.id);
     const { password: _, ...newUser } = result;
