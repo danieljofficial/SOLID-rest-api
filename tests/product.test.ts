@@ -1,6 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
 import request from "supertest";
 import createApp from "../src/app";
+import {
+  cleanupTestUsers,
+  getAuthenticatedRequest,
+  registerTestUser,
+} from "./testUtils";
 
 describe("Product API", () => {
   let app = createApp();
@@ -18,7 +22,10 @@ describe("Product API", () => {
       price: 823,
     };
 
-    const productResponse = await request(app).post("/products").send(testData);
+    const productResponse = await authenticatedRequest(
+      "post",
+      "/products"
+    ).send(testData);
     testProducts.push({ id: productResponse.body.id });
 
     return {
@@ -39,20 +46,30 @@ describe("Product API", () => {
     testProducts = [];
   };
 
+  let testUser: Awaited<ReturnType<typeof registerTestUser>>;
+  let authenticatedRequest: ReturnType<typeof getAuthenticatedRequest>;
+
+  beforeAll(async () => {
+    testUser = await registerTestUser();
+    authenticatedRequest = getAuthenticatedRequest(testUser);
+  });
   afterEach(() => {
     cleanUpTestProducts();
   });
+  afterAll(cleanupTestUsers);
 
   describe("POST /products", () => {
     it("Should create a new product", async () => {
-      const response = await request(app).post("/products").send(testObject);
+      const response = await authenticatedRequest("post", "/products").send(
+        testObject
+      );
 
       expect(response.status).toBe(201);
       expect(response.body).toMatchObject(testObject);
     });
 
     it("Should reject product creation with missing required fields (400)", async () => {
-      const response = await request(app).post("/products").send({
+      const response = await authenticatedRequest("post", "/products").send({
         name: "test product",
         description: "test product",
       });
@@ -63,7 +80,7 @@ describe("Product API", () => {
 
   describe("GET /products", () => {
     it("Should get a list of products", async () => {
-      const response = await request(app).get("/products");
+      const response = await authenticatedRequest("get", "/products");
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -78,7 +95,10 @@ describe("Product API", () => {
   describe("GET /products/:id", () => {
     it("Should get a product", async () => {
       const { productId } = await createTestProduct();
-      const response = await request(app).get(`/products/${productId}`);
+      const response = await authenticatedRequest(
+        "get",
+        `/products/${productId}`
+      );
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject(testObject);
@@ -90,9 +110,10 @@ describe("Product API", () => {
       const updates = { description: "updated description" };
       const { productId } = await createTestProduct();
 
-      const response = await request(app)
-        .patch(`/products/${productId}`)
-        .send(updates);
+      const response = await authenticatedRequest(
+        "patch",
+        `/products/${productId}`
+      ).send(updates);
 
       expect(response.status).toBe(200);
       expect(response.body.description).toBe(updates.description);
@@ -102,7 +123,10 @@ describe("Product API", () => {
   describe("DELETE /products/:id", () => {
     it("Should successfully delete a product", async () => {
       const { productId } = await createTestProduct();
-      const response = await request(app).delete(`/products/${productId}`);
+      const response = await authenticatedRequest(
+        "delete",
+        `/products/${productId}`
+      );
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });

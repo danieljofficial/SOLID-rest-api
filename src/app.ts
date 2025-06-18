@@ -25,7 +25,7 @@ function createApp() {
 
   app.use("/users", authMiddleware.authenticate, userRoutes);
   app.use("/auth", authRoutes);
-  app.use("/products", productRoutes);
+  app.use("/products", authMiddleware.authenticate, productRoutes);
 
   app.use(errorHandler);
   return app;

@@ -2,16 +2,11 @@ import request from "supertest";
 import createApp from "../src/app";
 import "dotenv/config";
 import { v4 as uuidv4 } from "uuid";
+import { cleanupTestUsers, registerTestUser } from "./testUtils";
 
 describe("Authentication tests", () => {
   let app = createApp();
-  const testUser = {
-    email: "test@example.com",
-    password: process.env.PASSWORD,
-    name: "Test User",
-  };
 
-  let testUsers: Array<{ id: string; token: string }> = [];
   const createTestUserData: () => {
     email: String;
     name?: String;
@@ -22,33 +17,7 @@ describe("Authentication tests", () => {
     password: process.env.TEST_USER_PASSWORD || "securepassword123",
   });
 
-  const registerTestUser = async (userData = createTestUserData()) => {
-    const response = await request(app).post("/auth/register").send(userData);
-
-    testUsers.push({
-      id: response.body.user.id,
-      token: response.body.token,
-    });
-
-    return {
-      userData,
-      response,
-      userId: response.body.user.id,
-      token: response.body.token,
-    };
-  };
-
-  afterEach(async () => {
-    await Promise.all(
-      testUsers.map((user) =>
-        request(app)
-          .delete(`/users/${user.id}`)
-          .set("Authorization", `Bearer ${user.token}`)
-          .catch((e) => console.error("Cleanup failed:", e))
-      )
-    );
-    testUsers = [];
-  });
+  afterEach(cleanupTestUsers);
 
   describe("POST auth/register", () => {
     it("should create a new user with valid data", async () => {
@@ -83,11 +52,11 @@ describe("Authentication tests", () => {
 
   describe("POST /auth/login", () => {
     it("should authenticate with valid credentials (200)", async () => {
-      const { userData } = await registerTestUser();
+      const user = await registerTestUser();
 
       const response = await request(app).post("/auth/login").send({
-        email: userData.email,
-        password: userData.password,
+        email: user.email,
+        password: "testpassword123",
       });
 
       expect(response.status).toBe(200);
@@ -95,18 +64,18 @@ describe("Authentication tests", () => {
         token: expect.any(String),
         user: {
           id: expect.any(Number),
-          email: userData.email,
-          name: userData.name,
+          email: user.email,
+          name: user.name,
           createdAt: expect.any(String),
         },
       });
     });
 
     it("should reject login with invalid password (401)", async () => {
-      const { userData } = await registerTestUser();
+      const user = await registerTestUser();
 
       const response = await request(app).post("/auth/login").send({
-        email: userData.email,
+        email: user.email,
         password: "wrongpassword",
       });
 
@@ -127,11 +96,11 @@ describe("Authentication tests", () => {
 
   describe("POST /auth/verify", () => {
     it("should verify a valid JWT token (200)", async () => {
-      const { token, userData } = await registerTestUser();
+      const user = await registerTestUser();
 
       const response = await request(app)
         .post("/auth/verify")
-        .set("Authorization", `Bearer ${token}`);
+        .set("Authorization", `Bearer ${user.token}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
